@@ -155,4 +155,4 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-Remember to adapt this example to your project's existing routing and state management setup (e.g., `flutter_modular`, `MobX`, "provider" or Bloc). You might integrate GetX for specific features or replace existing state management solutions gradually.
+Remember to adapt this example to your project's existing routing and state management setup (e.g., `flutter_modular`, `MobX`). You might integrate GetX for specific features or replace existing state management solutions gradually.

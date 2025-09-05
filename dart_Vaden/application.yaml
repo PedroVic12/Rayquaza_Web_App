@@ -4,15 +4,15 @@ openapi:
   description: API gerada automaticamente pelo Vaden.
   enable: true
 
-postgres:
-  host: 0.0.0.0
-  database: postgres
-  port: 5432
-  username: username
-  password: password
-  ssl: disable
+#postgres:
+#  host: 0.0.0.0
+#  database: postgres
+#  port: 5432
+#  username: username
+#  password: password
+#  ssl: disable
 server:
-  port: 8080
+  port: 8081
   host: 0.0.0.0
 
 storage:

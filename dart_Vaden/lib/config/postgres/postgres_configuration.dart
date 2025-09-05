@@ -1,3 +1,4 @@
+/*
 import 'package:postgres/postgres.dart';
 import 'package:vaden/vaden.dart';
 
@@ -27,3 +28,4 @@ class PostgresConfiguration {
     );
   }
 }
+*/

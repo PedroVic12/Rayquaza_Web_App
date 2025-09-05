@@ -1,47 +1,29 @@
-import 'dart:io';
-
-import 'package:cadastro_asp/pages/client_page.dart';
-import 'package:cadastro_asp/pages/edit_client_page.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:dio/dio.dart';
 
-import 'entities/client_entity.dart';
-import 'reducers/client_reducer.dart';
-import 'services/client_service.dart';
 import 'services/http_client_service.dart';
+import 'services/client_service.dart';
+import 'controllers/theme_controller.dart';
+import 'pages/client_page.dart';
+import 'pages/edit_client_page.dart';
 
-void main() {
-  runApp(const RootWidget());
-}
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
 
-class RootWidget extends StatefulWidget {
-  const RootWidget({super.key});
+  // Register Dio and HttpClientService
+  Get.put(Dio());
+  Get.put(HttpClientService(Get.find<Dio>()));
 
-  @override
-  State<RootWidget> createState() => _RootWidgetState();
-}
+  // Register ClientService
+  Get.put(ClientService(Get.find<HttpClientService>()));
 
-class _RootWidgetState extends State<RootWidget> {
-  final httpClient = HttpClient();
-  late final httpClientService = HttpClientService(httpClient);
-  late final clientService = ClientService(httpClientService);
-  late final reducer;
+  // Register ThemeController
+  Get.put(ThemeController());
 
-  @override
-  void initState() {
-    super.initState();
-    reducer = ClientReducer(clientService);
-  }
-
-  @override
-  void dispose() {
-    reducer.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const MainApp();
-  }
+  runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
@@ -49,16 +31,26 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final ThemeController themeController = Get.find<ThemeController>();
+
+    return GetMaterialApp(
+      title: 'Rayquaza Web App',
+      debugShowCheckedModeBanner: false,
+      themeMode: themeController.themeMode,
+      theme: ThemeData.light().copyWith(
+        primaryColor: Colors.blue,
+        appBarTheme: const AppBarTheme(color: Colors.blue),
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: Colors.indigo,
+        appBarTheme: const AppBarTheme(color: Colors.indigo),
+      ),
       initialRoute: '/',
-      routes: {
-        '/': (_) => const ClientPage(),
-        '/create': (_) => const EditClient(),
-        '/edit': (context) {
-          final entity = ModalRoute.of(context)?.settings.arguments as ClientEntity?;
-          return EditClient(entity: entity);
-        },
-      },
+      getPages: [
+        GetPage(name: '/', page: () => const ClientPage()),
+        GetPage(name: '/create', page: () => const EditClient()),
+        GetPage(name: '/edit', page: () => EditClient(entity: Get.arguments)),
+      ],
     );
   }
 }

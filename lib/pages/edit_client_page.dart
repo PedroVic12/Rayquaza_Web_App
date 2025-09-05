@@ -1,11 +1,11 @@
-import 'package:cadastro_asp/adapters/client_adapter.dart';
-import 'package:cadastro_asp/states/edit_client.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-import '../atoms/client_atom.dart';
+import '../controllers/client_controller.dart';
 import '../dtos/client_dto.dart';
 import '../entities/client_entity.dart';
 import '../widgets/text_input.dart';
+import '../adapters/client_adapter.dart';
 
 class EditClient extends StatefulWidget {
   final ClientEntity? entity;
@@ -20,6 +20,11 @@ class EditClient extends StatefulWidget {
 
 class _EditClientState extends State<EditClient> {
   late ClientDTO dto;
+  final ClientController clientController = Get.find<ClientController>();
+
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController detailsController = TextEditingController();
 
   bool get editable => widget.entity != null;
 
@@ -28,107 +33,91 @@ class _EditClientState extends State<EditClient> {
     super.initState();
     if (widget.entity != null) {
       dto = ClientAdapter.entityToDTO(widget.entity!);
+      nameController.text = dto.name ?? '';
+      emailController.text = dto.email ?? '';
+      detailsController.text = dto.details ?? '';
     } else {
       dto = ClientDTO();
     }
-    editClientState.value = const StartEditClientState();
-    editClientState.addListener(_listener);
-  }
-
-  _listener() {
-    setState(() {});
-    return switch (editClientState.value) {
-      StartEditClientState state => state,
-      SavedClientState _ => Navigator.of(context).pop(),
-      LoadingEditClientState state => state,
-      FailureEditClientState state => _showSnackError(state),
-    };
   }
 
   @override
   void dispose() {
-    editClientState.removeListener(_listener);
+    nameController.dispose();
+    emailController.dispose();
+    detailsController.dispose();
     super.dispose();
   }
 
-  void _showSnackError(FailureEditClientState state) {
-    final snackBar = SnackBar(
-      content: Text(
-        state.message,
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: Colors.red,
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
+  void _save() async {
+    dto.name = nameController.text;
+    dto.email = emailController.text;
+    dto.details = detailsController.text;
 
-  void _save() {
     if (!dto.isValid()) {
-      _showSnackError(const FailureEditClientState('Campos inválidos'));
+      Get.snackbar(
+        'Validation Error',
+        'Please fill all required fields correctly.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
     if (editable) {
-      updateClientAction.value = dto.copy();
+      await clientController.updateClient(dto);
     } else {
-      createClientAction.value = dto.copy();
+      await clientController.createClient(dto);
     }
   }
 
   void _clear() {
-    setState(() => dto = ClientDTO(id: dto.id));
+    setState(() {
+      dto = ClientDTO(id: dto.id);
+      nameController.clear();
+      emailController.clear();
+      detailsController.clear();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = editClientState.value;
-
-    final enabled = state is! LoadingEditClientState;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Client'),
+        title: Text(editable ? 'Edit Client' : 'Create Client'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             TextInput(
-              key: Key('name:$enabled${dto.hashCode}'),
-              enabled: enabled,
-              initialValue: dto.name,
+              controller: nameController,
               hint: 'Nome',
               validator: dto.nameValidate,
-              onChanged: (value) => dto.name = value,
             ),
             const SizedBox(height: 5),
             TextInput(
-              key: Key('email:$enabled${dto.hashCode}'),
-              enabled: enabled,
-              initialValue: dto.email,
+              controller: emailController,
               hint: 'Email',
               validator: dto.emailValidate,
-              onChanged: (value) => dto.email = value,
             ),
             const SizedBox(height: 5),
             TextInput(
-              key: Key('details:$enabled${dto.hashCode}'),
-              enabled: enabled,
-              initialValue: dto.details,
+              controller: detailsController,
               hint: 'Detalhes',
-              onChanged: (value) => dto.details = value,
             ),
             const SizedBox(height: 20),
             Row(
               children: [
-                OutlinedButton(
-                  onPressed: !enabled ? null : _save,
+                ElevatedButton(
+                  onPressed: _save,
                   child: const Text('Salvar'),
                 ),
                 const SizedBox(width: 10),
                 OutlinedButton(
-                  onPressed: !enabled ? null : _clear,
-                  child: const Text('Limpa'),
+                  onPressed: _clear,
+                  child: const Text('Limpar'),
                 ),
               ],
             ),
